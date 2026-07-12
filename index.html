@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Наш дом</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg:      var(--tg-theme-bg-color, #FBF7F2);
+    --card:    var(--tg-theme-secondary-bg-color, #FFFFFF);
+    --text:    var(--tg-theme-text-color, #2B2622);
+    --muted:   var(--tg-theme-hint-color, #9A9089);
+    --accent:  #E07856;
+    --accent-press: #C9613F;
+    --line:    rgba(0,0,0,0.06);
+    --shadow:  0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+
+    --cat:     #F2B544;
+    --apt:     #5B9BD5;
+    --kitchen: #6BBF8A;
+    --shop:    #B98BD9;
+    --leisure: #E58BA8;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.4;
+    padding: 0 0 120px;
+  }
+
+  header {
+    padding: 22px 20px 10px;
+  }
+  .hello {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .title {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 2px 0 0;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .rooms { padding: 8px 16px 0; }
+
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 6px 8px 8px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 8px;
+  }
+  .badge {
+    width: 34px; height: 34px;
+    border-radius: 11px;
+    display: grid; place-items: center;
+    font-size: 18px;
+    flex: none;
+  }
+  .card-title { font-size: 16px; font-weight: 700; }
+
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    font-size: 15.5px;
+    font-weight: 500;
+    padding: 13px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.08s ease;
+    font-family: inherit;
+  }
+  .task:active { background: var(--line); transform: scale(0.99); }
+  .task .emoji { font-size: 19px; width: 24px; text-align: center; flex: none; }
+  .task .chev { margin-left: auto; color: var(--muted); font-size: 18px; }
+
+  /* Bottom sheet */
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    border-radius: 22px 22px 0 0;
+    padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+    transform: translateY(110%);
+    transition: transform 0.26s cubic-bezier(0.22,1,0.36,1);
+    z-index: 11;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.12);
+  }
+  .sheet.open { transform: translateY(0); }
+  .grip {
+    width: 38px; height: 4px; border-radius: 2px;
+    background: var(--line); margin: 0 auto 16px;
+  }
+  .sheet-emoji { font-size: 40px; text-align: center; }
+  .sheet-label {
+    font-size: 21px; font-weight: 700; text-align: center;
+    margin: 8px 0 2px;
+  }
+  .sheet-to {
+    font-size: 14px; color: var(--muted); text-align: center;
+    margin-bottom: 18px;
+  }
+  .field {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 13px;
+    padding: 13px 14px;
+    font-size: 16px;
+    font-family: inherit;
+    margin-bottom: 16px;
+    resize: none;
+  }
+  .field:focus { outline: none; border-color: var(--accent); }
+  .field::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 100%;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s ease, transform 0.08s ease;
+  }
+  .send-btn:active { background: var(--accent-press); transform: scale(0.99); }
+  .send-btn:disabled { opacity: 0.45; }
+
+  .cancel-btn {
+    width: 100%;
+    border: none; background: transparent;
+    color: var(--muted);
+    font-size: 15px; font-weight: 600;
+    padding: 14px; margin-top: 4px;
+    cursor: pointer; font-family: inherit;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 8px 20px 0;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="hello" id="hello">Наш дом</div>
+    <h1 class="title">Что нужно сделать?</h1>
+    <div class="subtitle" id="subtitle">Выбери — отправлю партнёру</div>
+  </header>
+
+  <main class="rooms" id="rooms"></main>
+
+  <footer>Сигнал улетит партнёру с кнопками «Да / Не смогу»</footer>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet">
+    <div class="grip"></div>
+    <div class="sheet-emoji" id="sheetEmoji">📨</div>
+    <div class="sheet-label" id="sheetLabel"></div>
+    <div class="sheet-to" id="sheetTo"></div>
+    <textarea class="field" id="field" rows="3" style="display:none"></textarea>
+    <button class="send-btn" id="sendBtn">Отправить</button>
+    <button class="cancel-btn" id="cancelBtn">Отмена</button>
+  </div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+
+  // ── Кто пользователь (для приветствия) ──
+  const PEOPLE = {
+    24238893:  { name: "Юра",  partner: "Кате" },
+    544759974: { name: "Катя", partner: "Юре" },
+  };
+  let partnerDative = "партнёру";
+  const uid = tg?.initDataUnsafe?.user?.id;
+  if (uid && PEOPLE[uid]) {
+    document.getElementById("hello").textContent = "Привет, " + PEOPLE[uid].name + " 👋";
+    partnerDative = PEOPLE[uid].partner;
+    document.getElementById("subtitle").textContent = "Выбери — отправлю " + partnerDative;
+  }
+
+  // ── Структура (1:1 с ботом) ──
+  // detail: true → перед отправкой просим уточнение (placeholder — подсказка)
+  const ROOMS = [
+    { id: "cat", title: "Кошачий уголок", icon: "🐱", color: "var(--cat)", tasks: [
+      { key: "cat_box",   emoji: "🪣", label: "Почистить горшок" },
+      { key: "cat_food",  emoji: "🐾", label: "Насыпать корм" },
+      { key: "cat_water", emoji: "💧", label: "Поменять воду" },
+    ]},
+    { id: "apt", title: "Квартира", icon: "🏠", color: "var(--apt)", tasks: [
+      { key: "apt_trash", emoji: "🗑️", label: "Вынести мусор" },
+      { key: "apt_wash",  emoji: "🧺", label: "Постирать вещи" },
+      { key: "apt_floor", emoji: "🧹", label: "Помыть полы" },
+    ]},
+    { id: "kitchen", title: "Кухня", icon: "🍽️", color: "var(--kitchen)", tasks: [
+      { key: "dish", emoji: "🍽️", label: "Помыть посуду" },
+    ]},
+    { id: "shop", title: "Магазин", icon: "🛒", color: "var(--shop)", tasks: [
+      { key: "shop", emoji: "🛒", label: "Купить продукты", detail: true,
+        placeholder: "Список покупок: молоко, хлеб, корм коту…" },
+    ]},
+    { id: "leisure", title: "Досуг", icon: "🎮", color: "var(--leisure)", tasks: [
+      { key: "leisure_play",   emoji: "🎮", label: "Поиграть",       detail: true, placeholder: "Во что? Напр.: Алан Вейк 2" },
+      { key: "leisure_film",   emoji: "🎬", label: "Фильм / Сериал", detail: true, placeholder: "Что посмотреть? Напр.: Дюна" },
+      { key: "leisure_hookah", emoji: "💨", label: "Забить кальян",  detail: true, placeholder: "На чём? Напр.: двойное яблоко" },
+    ]},
+  ];
+
+  // ── Рендер карточек ──
+  const roomsEl = document.getElementById("rooms");
+  ROOMS.forEach(room => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const head = document.createElement("div");
+    head.className = "card-head";
+    head.innerHTML =
+      `<div class="badge" style="background:${room.color}1F">${room.icon}</div>` +
+      `<div class="card-title">${room.title}</div>`;
+    card.appendChild(head);
+
+    room.tasks.forEach(t => {
+      const btn = document.createElement("button");
+      btn.className = "task";
+      btn.innerHTML =
+        `<span class="emoji">${t.emoji}</span>` +
+        `<span>${t.label}</span>` +
+        `<span class="chev">${t.detail ? "✎" : "›"}</span>`;
+      btn.addEventListener("click", () => openSheet(t));
+      card.appendChild(btn);
+    });
+
+    roomsEl.appendChild(card);
+  });
+
+  // ── Bottom sheet ──
+  const scrim   = document.getElementById("scrim");
+  const sheet   = document.getElementById("sheet");
+  const field   = document.getElementById("field");
+  const sendBtn = document.getElementById("sendBtn");
+  let current = null;
+
+  function openSheet(task) {
+    current = task;
+    document.getElementById("sheetEmoji").textContent = task.emoji;
+    document.getElementById("sheetLabel").textContent = task.label;
+    document.getElementById("sheetTo").textContent = "Отправить " + partnerDative + "?";
+
+    if (task.detail) {
+      field.style.display = "block";
+      field.value = "";
+      field.placeholder = task.placeholder || "Уточни детали…";
+      sendBtn.disabled = true;
+    } else {
+      field.style.display = "none";
+      sendBtn.disabled = false;
+    }
+
+    scrim.classList.add("open");
+    sheet.classList.add("open");
+    if (task.detail) setTimeout(() => field.focus(), 300);
+    tg?.HapticFeedback?.impactOccurred?.("light");
+  }
+
+  function closeSheet() {
+    scrim.classList.remove("open");
+    sheet.classList.remove("open");
+    current = null;
+  }
+
+  field.addEventListener("input", () => {
+    sendBtn.disabled = field.value.trim().length === 0;
+  });
+
+  scrim.addEventListener("click", closeSheet);
+  document.getElementById("cancelBtn").addEventListener("click", closeSheet);
+
+  sendBtn.addEventListener("click", () => {
+    if (!current) return;
+    const payload = {
+      key: current.key,
+      detail: current.detail ? field.value.trim() : "",
+    };
+
+    if (tg && tg.initData) {
+      tg.sendData(JSON.stringify(payload));   // закроет Mini App и отдаст данные боту
+    } else {
+      // Превью в обычном браузере (без Telegram)
+      alert("Отправлено боту:\n" + JSON.stringify(payload, null, 2));
+      closeSheet();
+    }
+  });
+
+  // ── Инициализация Telegram ──
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+</script>
+</body>
+</html>
